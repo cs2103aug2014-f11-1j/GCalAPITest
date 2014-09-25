@@ -7,10 +7,10 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.DateTime;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.store.DataStore;
 import com.google.api.client.util.store.FileDataStoreFactory;
-
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.CalendarList;
@@ -22,6 +22,7 @@ import com.google.api.services.calendar.model.Events;
 import java.io.BufferedReader;
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -55,7 +56,7 @@ public class GoogleCalConnector {
 	private static final String USERNAME = "User";
 
 	//Global instances
-	private static Calendar client;
+	private static Calendar calendar;
 	static final java.util.List<Calendar> addedCalendarsUsingBatch = Lists.newArrayList();
 	
 	private GoogleAuthorizationCodeFlow flow;
@@ -64,6 +65,7 @@ public class GoogleCalConnector {
 	private HttpTransport httpTransport;
 	private JsonFactory jsonFactory;
 	private DataStore<StoredCredential> dataStore;
+	private GoogleCredential credential;
 	
 	/**
 	 * Returns a GoogleTaskConnector after trying to 
@@ -91,8 +93,8 @@ public class GoogleCalConnector {
 	 * executed.
 	 */
 	public void setUp(){
-		GoogleCredential credential = getCredential();
-		client = new Calendar.Builder(httpTransport, jsonFactory, credential)
+		credential = getCredential();
+		calendar = new Calendar.Builder(httpTransport, jsonFactory, credential)
 		.setApplicationName(APPLICATION_NAME).build();
 	}
 
@@ -228,12 +230,7 @@ public class GoogleCalConnector {
 	
 	
 	//Get some data
-	private void getData(){
-		GoogleCredential credential = getCredential();
-		Calendar.Builder serviceBuilder = new Calendar.Builder(httpTransport, jsonFactory, credential);
-		serviceBuilder.setApplicationName(APPLICATION_NAME);
-		Calendar calendar = serviceBuilder.build();
-		
+	public void getData(){
 		try {
 			Calendar.CalendarList.List listRequest = calendar.calendarList().list();
 			CalendarList feed = listRequest.execute();
@@ -246,5 +243,54 @@ public class GoogleCalConnector {
 			e.printStackTrace();
 		}
 	}
-		
+	
+	
+	/**
+	 * 
+	 * Adds an Event to the calendar given title, the starting date, ending date of the task
+	 * 
+	 * @param 	summary
+	 * @param 	startDate
+	 * @param 	endDate
+	 * @return	Title of the event
+	 */
+	public String addEvent(String summary, DateTime startDate, DateTime endDate) {
+		if (summary == null){
+			return MESSAGE_ARGUMENTS_NULL;
+		} else {
+			Event event = new Event();
+			event.setSummary(summary);
+			
+			if(startDate != null){
+				event.setStart(new EventDateTime().setDateTime(startDate));			
+			}
+			if(endDate != null){
+				event.setEnd(new EventDateTime().setDateTime(endDate));		
+			}
+			try {
+				Event createdEvent = calendar.events().insert("sean.firstcloud@gmail.com", event).execute();
+				return createdEvent.getSummary();
+			} catch (IOException e) {
+				return MESSAGE_EXCEPTION_IO;
+			}
+		}
+	}
+	
+	/**
+	 * Prints out all events
+	 * @return List of all events
+	 */
+	public String getAllEvents(){
+		try {
+			List<Event> events = calendar.events().list("sean.firstcloud@gmail.com").execute().getItems();
+					
+			String result = "";
+			for (Event event : events){
+				result += event.getSummary() + "\n";
+			}
+			return result;
+		} catch (IOException e){
+			return MESSAGE_EXCEPTION_IO;
+		}
+	}
 }
