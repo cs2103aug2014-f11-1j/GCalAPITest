@@ -22,6 +22,7 @@ import com.google.api.services.calendar.model.Events;
 import java.io.BufferedReader;
 import java.io.File;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -54,6 +55,7 @@ public class GoogleCalConnector {
 	private static final String FLOW_APPROVAL_PROMPT = "auto";
 
 	private static final String USERNAME = "User";
+	private static final String PRIMARY_CALENDAR_ID = "primary";
 
 	//Global instances
 	private static Calendar calendar;
@@ -268,7 +270,7 @@ public class GoogleCalConnector {
 				event.setEnd(new EventDateTime().setDateTime(endDate));		
 			}
 			try {
-				Event createdEvent = calendar.events().insert("sean.firstcloud@gmail.com", event).execute();
+				Event createdEvent = calendar.events().insert(PRIMARY_CALENDAR_ID, event).execute();
 				return createdEvent.getSummary();
 			} catch (IOException e) {
 				return MESSAGE_EXCEPTION_IO;
@@ -282,7 +284,10 @@ public class GoogleCalConnector {
 	 */
 	public String getAllEvents(){
 		try {
-			List<Event> events = calendar.events().list("sean.firstcloud@gmail.com").execute().getItems();
+			// Gets events from current time onwards
+			List<Event> events = calendar.events().list(PRIMARY_CALENDAR_ID)
+					.setTimeMin(new DateTime(new Date())) 
+					.execute().getItems();
 					
 			String result = "";
 			for (Event event : events){

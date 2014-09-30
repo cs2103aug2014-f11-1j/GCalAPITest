@@ -5,9 +5,9 @@ import java.util.TimeZone;
 import com.google.api.client.util.DateTime;
 
 /**
- * This class is used to test the connector to Google Task API.
+ * This class is used to test the connector to Google Calendar API.
  * 
- * @author Michelle Tan
+ * @author Sean Saito
  */
 public class GCalAPITest {
 	public static void main(String[] args) {
